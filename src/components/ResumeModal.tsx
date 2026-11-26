@@ -32,6 +32,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           className="relative w-full max-w-4xl bg-zinc-950 border border-zinc-800 rounded-2xl shadow-2xl overflow-hidden z-10 max-h-[90vh] flex flex-col"
         >
+          
           {/* Header Bar */}
           <div className="flex items-center justify-between p-4 sm:p-6 border-b border-zinc-800 bg-zinc-900/80">
             <div className="flex items-center gap-2">
@@ -126,6 +127,7 @@ export const ResumeModal: React.FC<ResumeModalProps> = ({ isOpen, onClose }) => 
           </div>
         </motion.div>
       </div>
+      
     </AnimatePresence>
   );
 };

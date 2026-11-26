@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { Send, Mail, MapPin, CheckCircle2, Github, Linkedin, Twitter, Sparkles, MessageSquare, AlertCircle } from 'lucide-react';
+import { Send, Mail, MapPin, CheckCircle2, Github, Linkedin, Sparkles, MessageSquare, AlertCircle } from 'lucide-react';
 import { PERSONAL_INFO } from '../data/portfolioData';
 import { ContactFormData } from '../types';
 
@@ -27,19 +26,71 @@ export const Contact: React.FC = () => {
     setTimeout(() => setCopiedEmail(false), 2500);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
-      setSubmitStatus('error');
-      setErrorMessage('Please complete all required fields (Name, Email, Message).');
-      return;
+ 
+const handleSubmit = async (
+  e: React.FormEvent<HTMLFormElement>
+) => {
+  e.preventDefault();
+
+  if (isSubmitting) return;
+
+  setSubmitStatus("idle");
+  setErrorMessage("");
+
+  if (
+    !formData.name.trim() ||
+    !formData.email.trim() ||
+    !formData.message.trim()
+  ) {
+    setSubmitStatus("error");
+    setErrorMessage("Please complete all required fields.");
+    return;
+  }
+
+  setIsSubmitting(true);
+
+  try {
+    const response = await fetch("/api/contact", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(formData)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      throw new Error(
+        result.error || "Failed to send message."
+      );
     }
 
-    window.location.href = `mailto:${PERSONAL_INFO.email}?subject=${encodeURIComponent(formData.subject || 'Portfolio enquiry')}&body=${encodeURIComponent(formData.message + '\n\nFrom: ' + formData.name + '\nEmail: ' + formData.email)}`;
-    setSubmitStatus('success');
-  };
+    setSubmitStatus("success");
+
+    setFormData({
+      name: "",
+      email: "",
+      subject: "",
+      message: ""
+    });
+
+  } catch (error) {
+    setSubmitStatus("error");
+
+    setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : "Something went wrong. Please try again."
+    );
+
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   return (
+    
     <section id="contact" className="py-24 bg-black relative border-t border-zinc-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
@@ -147,17 +198,17 @@ export const Contact: React.FC = () => {
               </h3>
 
               {submitStatus === 'success' && (
-                <div className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-sm flex items-start gap-3">
+                <div role="status" className="p-4 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-sm flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold">Email draft prepared</p>
-                    <p className="text-xs text-emerald-200 mt-0.5">Review and send the draft in your email app. This website has not sent or stored your message.</p>
+                    <p className="font-semibold">Message submitted successfully!</p>
+                    <p className="text-xs text-emerald-200 mt-0.5">Thank you for reaching out. Your message has been submitted.</p>
                   </div>
                 </div>
               )}
 
               {submitStatus === 'error' && (
-                <div className="p-4 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-sm flex items-start gap-3">
+                <div role="alert" className="p-4 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-sm flex items-start gap-3">
                   <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold">Submission Error</p>
@@ -179,6 +230,7 @@ export const Contact: React.FC = () => {
                       required
                       value={formData.name}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       placeholder="e.g. Sarah Jenkins"
                       className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-colors"
                       id="contact-name-input"
@@ -196,6 +248,7 @@ export const Contact: React.FC = () => {
                       required
                       value={formData.email}
                       onChange={handleChange}
+                      disabled={isSubmitting}
                       placeholder="e.g. sarah@example.com"
                       className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-colors"
                       id="contact-email-input"
@@ -211,6 +264,7 @@ export const Contact: React.FC = () => {
                     name="subject"
                     value={formData.subject}
                     onChange={handleChange}
+                    disabled={isSubmitting}
                     placeholder="e.g. Software Engineering Opportunity / AI Project Inquiry"
                     className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-colors"
                     id="contact-subject-input"
@@ -228,6 +282,7 @@ export const Contact: React.FC = () => {
                     rows={5}
                     value={formData.message}
                     onChange={handleChange}
+                    disabled={isSubmitting}
                     placeholder="Write your message here..."
                     className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 transition-colors resize-none"
                     id="contact-message-input"
@@ -246,7 +301,7 @@ export const Contact: React.FC = () => {
                   ) : (
                     <>
                       <Send className="w-4 h-4" />
-                      <span>Open Email Draft</span>
+                      <span>Send Message</span>
                     </>
                   )}
                 </button>
